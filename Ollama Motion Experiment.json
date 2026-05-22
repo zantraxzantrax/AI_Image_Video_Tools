@@ -1,0 +1,1975 @@
+{
+  "name": "Ollama Motion Experiment",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        -1760
+      ],
+      "id": "060a231d-6735-4bed-9f3c-a1a6725cb033",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, (no humans, no faces, no nudity, no people, no living creatures, no steampunk, no castles, no dark colors, no gloom, no text:1.5)`;\n\nreturn {\n  comfy_json: {\n    \"prompt\": {\n      \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n      \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n      \"9\": { \"inputs\": { \"filename_prefix\": \"n8n_Flux\", \"images\": [\"8\", 0] }, \"class_type\": \"SaveImage\" },\n      \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n      \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n      \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n      \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n      \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n      \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n      \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n      \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n      \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n      \"27\": { \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n      \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 1024, \"height\": 1024, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -496
+      ],
+      "id": "1274940d-4188-46aa-8f7e-5d62b08621d5",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ JSON.stringify($json.comfy_json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        -496
+      ],
+      "id": "043012bf-fd55-4c51-b246-ad950d63bc28",
+      "name": "Working Flux Gen"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        288,
+        -496
+      ],
+      "id": "01070d67-eccd-41c6-8f59-f182504af5fe",
+      "name": "Ollama Prompt Gen",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "batchSize": 4,
+        "options": {
+          "reset": true
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        352
+      ],
+      "id": "60a2a61c-09f2-45db-a5a8-76ea8e173bba",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "IIepHHNHYgquVDuu",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/IIepHHNHYgquVDuu",
+          "cachedResultName": "StartAI"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        -160
+      ],
+      "name": "Call StartAI",
+      "id": "2b2bc548-580c-4769-a001-c0655621c518"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "4E0X3O2O6FfK4GgU",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        288
+      ],
+      "name": "Call Push To Storage",
+      "id": "8c30f956-88d2-462c-90a1-b23879f3b1a6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the current loop index for unique filenames\nconst loopIndex = ($node[\"Loop Over Items\"] && $node[\"Loop Over Items\"].index) || 0;\n\n// 2. Clean the prompt from Ollama\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"abstract modern splash paint art\";\nconst fullPrompt = `${responseText}, vibrant colours, beautiful, sharp tack, 4k, ultra high quality, professional`;\n\nreturn {\n  comfy_json: {\n    \"prompt\": {\n      \"6\": {\n        \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] },\n        \"class_type\": \"CLIPTextEncode\"\n      },\n      \"8\": {\n        \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] },\n        \"class_type\": \"VAEDecode\"\n      },\n      \"9\": {\n        \"inputs\": { \n          \"filename_prefix\": `4k_Batch_${loopIndex}`, \n          \"images\": [\"39\", 0] \n        },\n        \"class_type\": \"SaveImage\"\n      },\n      \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n      \"11\": {\n        \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\", \"device\": \"default\" },\n        \"class_type\": \"DualCLIPLoader\"\n      },\n      \"12\": {\n        \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" },\n        \"class_type\": \"UNETLoader\"\n      },\n      \"13\": {\n        \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] },\n        \"class_type\": \"SamplerCustomAdvanced\"\n      },\n      \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n      \"17\": {\n        \"inputs\": { \"scheduler\": \"simple\", \"steps\": 20, \"denoise\": 1, \"model\": [\"30\", 0] },\n        \"class_type\": \"BasicScheduler\"\n      },\n      \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n      \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n      \"26\": { \"inputs\": { \"guidance\": 3.5, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n      \"27\": {\n        \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 },\n        \"class_type\": \"EmptySD3LatentImage\"\n      },\n      \"30\": {\n        \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 1024, \"height\": 1024, \"model\": [\"12\", 0] },\n        \"class_type\": \"ModelSamplingFlux\"\n      },\n      \"38\": { \"inputs\": { \"model_name\": \"RealESRGAN_x2plus.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n      \"39\": { \"inputs\": { \"upscale_model\": [\"38\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -64
+      ],
+      "id": "5166d184-3976-4e99-abc4-16f74e59f33a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        288,
+        -64
+      ],
+      "id": "a7a64359-1ddf-469a-a69c-92cdf251db49",
+      "name": "Ollama Prompt Gen1",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ JSON.stringify($json.comfy_json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        -64
+      ],
+      "id": "ad6bae37-3a7e-4ea4-adbd-511ed48691c7",
+      "name": "Working Flux 2x Upscale"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Batch has completed successfully"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        -384
+      ],
+      "id": "e833c343-2b42-47ab-b7cd-b9cdb65a5cd3",
+      "name": "Job Complete"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        288,
+        352
+      ],
+      "id": "b24ce3fd-b0f0-434b-8caf-4fa5af3466ac",
+      "name": "Ollama Prompt Gen2",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const loopIndex = ($node[\"Loop Over Items\"] && $node[\"Loop Over Items\"].index) || 0;\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"abstract modern splash paint art\";\nconst fullPrompt = `${responseText}, vibrant colours, beautiful, sharp tack, 4k, ultra high quality, professional`;\n\nreturn {\n  comfy_json: {\n    \"prompt\": {\n      \"6\": {\n        \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] },\n        \"class_type\": \"CLIPTextEncode\"\n      },\n      \"8\": {\n        \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] },\n        \"class_type\": \"VAEDecode\"\n      },\n      \"9\": {\n        \"inputs\": { \n          \"filename_prefix\": `8k_4x_Batch_${loopIndex}`, \n          \"images\": [\"41\", 0] \n        },\n        \"class_type\": \"SaveImage\"\n      },\n      \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n      \"11\": {\n        \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\", \"device\": \"default\" },\n        \"class_type\": \"DualCLIPLoader\"\n      },\n      \"12\": {\n        \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" },\n        \"class_type\": \"UNETLoader\"\n      },\n      \"13\": {\n        \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] },\n        \"class_type\": \"SamplerCustomAdvanced\"\n      },\n      \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n      \"17\": {\n        \"inputs\": { \"scheduler\": \"simple\", \"steps\": 20, \"denoise\": 1, \"model\": [\"30\", 0] },\n        \"class_type\": \"BasicScheduler\"\n      },\n      \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n      \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n      \"26\": { \"inputs\": { \"guidance\": 3.5, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n      \"27\": {\n        \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 },\n        \"class_type\": \"EmptySD3LatentImage\"\n      },\n      \"30\": {\n        \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 2560, \"height\": 1440, \"model\": [\"12\", 0] },\n        \"class_type\": \"ModelSamplingFlux\"\n      },\n      \"38\": { \n        \"inputs\": { \"model_name\": \"RealESRGAN_x2plus.pth\" }, \n        \"class_type\": \"UpscaleModelLoader\" \n      },\n      \"39\": { \n        \"inputs\": { \"upscale_model\": [\"38\", 0], \"image\": [\"8\", 0] }, \n        \"class_type\": \"ImageUpscaleWithModel\" \n      },\n      \"40\": { \n        \"inputs\": { \"model_name\": \"RealESRGAN_x2plus.pth\" }, \n        \"class_type\": \"UpscaleModelLoader\" \n      },\n      \"41\": { \n        \"inputs\": { \"upscale_model\": [\"40\", 0], \"image\": [\"39\", 0] }, \n        \"class_type\": \"ImageUpscaleWithModel\" \n      }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        352
+      ],
+      "id": "d10b9ab9-0a81-4e63-963a-1a05beafdf44",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ JSON.stringify($json.comfy_json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        352
+      ],
+      "id": "0fa58311-1ae9-4f54-8f5b-13d46df7f6a1",
+      "name": "Working Flux 4x Upscaler"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        1008
+      ],
+      "id": "d9dc7f32-c3e5-4094-9b77-11de1ed7167c",
+      "name": "Ollama Prompt Gen3",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nlet rawContent = \"\";\n\n// 1. Get the response string from Ollama\nif (inputData.response) {\n    rawContent = inputData.response;\n} else if (inputData.message && inputData.message.content) {\n    rawContent = inputData.message.content;\n}\n\n// 2. Parse the inner JSON that Llama created\nlet imgP = \"vibrant pigment explosion\"; // Fallbacks\nlet motP = \"fluid swirling motion\";\n\ntry {\n    // Clean the string (sometimes LLMs add markdown code blocks like ```json)\n    const cleaned = rawContent.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n    const parsed = JSON.parse(cleaned);\n    \n    imgP = parsed.image_prompt || imgP;\n    motP = parsed.motion_description || motP;\n} catch (e) {\n    // If parsing fails, use the raw text for both\n    imgP = rawContent;\n    motP = rawContent;\n}\n\n// 3. Define the ComfyUI Workflow (using our new variables imgP and motP)\nconst workflow = {\n  // ... [Keep the rest of your nodes exactly the same] ...\n  \"132:17\": { \"inputs\": { \"text\": imgP, \"clip\": [\"132:12\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"187:158\": { \"inputs\": { \"text\": motP, \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  // ... [Keep the rest of your nodes exactly the same] ...\n  \"138\": { \"inputs\": { \"samples\": [\"186:148\", 0], \"vae\": [\"185:140\", 0] }, \"class_type\": \"VAEDecode\" },\n  \"161\": { \"inputs\": { \"images\": [\"132:13\", 0] }, \"class_type\": \"PreviewImage\" },\n  \"162\": { \"inputs\": { \"images\": [\"138\", 0] }, \"class_type\": \"PreviewImage\" },\n  \"178\": { \"inputs\": { \"ckpt_name\": \"rife49.pth\", \"clear_cache_after_n_frames\": 10, \"multiplier\": 4, \"fast_mode\": true, \"ensemble\": true, \"scale_factor\": 1, \"dtype\": \"float32\", \"torch_compile\": false, \"batch_size\": 1, \"frames\": [\"138\", 0] }, \"class_type\": \"RIFE VFI\" },\n  \"179\": { \"inputs\": { \"resize_type\": \"scale by multiplier\", \"resize_type.scale\": 4, \"quality\": \"ULTRA\", \"images\": [\"178\", 0] }, \"class_type\": \"RTXVideoSuperResolution\" },\n  \"181\": { \"inputs\": { \"frame_rate\": 60, \"loop_count\": 0, \"filename_prefix\": \"AnimateDiff\", \"format\": \"video/nvenc_hevc-mp4\", \"pix_fmt\": \"yuv420p\", \"bitrate\": 43, \"megabit\": true, \"save_metadata\": true, \"pingpong\": true, \"save_output\": true, \"images\": [\"179\", 0] }, \"class_type\": \"VHS_VideoCombine\" },\n  \"132:1\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 20, \"denoise\": 1, \"model\": [\"132:7\", 0] }, \"class_type\": \"BasicScheduler\" },\n  \"132:2\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n  \"132:3\": { \"inputs\": { \"guidance\": 3.5, \"conditioning\": [\"132:17\", 0] }, \"class_type\": \"FluxGuidance\" },\n  \"132:4\": { \"inputs\": { \"model\": [\"132:7\", 0], \"conditioning\": [\"132:3\", 0] }, \"class_type\": \"BasicGuider\" },\n  \"132:5\": { \"inputs\": { \"noise\": [\"132:6\", 0], \"guider\": [\"132:4\", 0], \"sampler\": [\"132:2\", 0], \"sigmas\": [\"132:1\", 0], \"latent_image\": [\"132:8\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n  \"132:6\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000000) }, \"class_type\": \"RandomNoise\" },\n  \"132:7\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 832, \"height\": 480, \"model\": [\"132:14\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n  \"132:8\": { \"inputs\": { \"width\": 832, \"height\": 480, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n  \"132:10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"132:12\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\", \"device\": \"default\" }, \"class_type\": \"DualCLIPLoader\" },\n  \"132:14\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"132:13\": { \"inputs\": { \"samples\": [\"132:5\", 0], \"vae\": [\"132:10\", 0] }, \"class_type\": \"VAEDecode\" },\n  \"185:140\": { \"inputs\": { \"vae_name\": \"wan_2.1_vae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"185:141\": { \"inputs\": { \"clip_name\": \"umt5_xxl_fp8_e4m3fn_scaled.safetensors\", \"type\": \"wan\", \"device\": \"default\" }, \"class_type\": \"CLIPLoader\" },\n  \"185:142\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"185:159\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"187:136\": { \"inputs\": { \"text\": \"bad quality, low res\", \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"183:173\": { \"inputs\": { \"width\": 832, \"height\": 480, \"length\": 81, \"batch_size\": 1, \"positive\": [\"187:158\", 0], \"negative\": [\"187:136\", 0], \"vae\": [\"185:140\", 0], \"start_image\": [\"132:13\", 0], \"end_image\": [\"132:13\", 0] }, \"class_type\": \"WanFirstLastFrameToVideo\" },\n  \"186:135\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:152\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:137\": { \"inputs\": { \"value\": 20 }, \"class_type\": \"PrimitiveInt\" },\n  \"186:139\": { \"inputs\": { \"value\": true }, \"class_type\": \"PrimitiveBoolean\" },\n  \"186:143\": { \"inputs\": { \"value\": 10 }, \"class_type\": \"PrimitiveInt\" },\n  \"186:144\": { \"inputs\": { \"value\": 3.5 }, \"class_type\": \"PrimitiveFloat\" },\n  \"186:145\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:142\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:146\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:159\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:147\": { \"inputs\": { \"add_noise\": \"enable\", \"noise_seed\": Math.floor(Math.random() * 1000000000000), \"steps\": [\"186:154\", 0], \"cfg\": 1, \"sampler_name\": \"euler\", \"scheduler\": \"simple\", \"start_at_step\": 0, \"end_at_step\": [\"186:153\", 0], \"return_with_leftover_noise\": \"enable\", \"model\": [\"186:135\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"183:173\", 2] }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:148\": { \"inputs\": { \"add_noise\": \"disable\", \"noise_seed\": 0, \"steps\": [\"186:154\", 0], \"cfg\": 1, \"sampler_name\": \"euler\", \"scheduler\": \"simple\", \"start_at_step\": [\"186:153\", 0], \"end_at_step\": [\"186:154\", 0], \"return_with_leftover_noise\": \"disable\", \"model\": [\"186:156\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"186:147\", 0] }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:149\": { \"inputs\": { \"value\": 1 }, \"class_type\": \"PrimitiveFloat\" },\n  \"186:150\": { \"inputs\": { \"value\": 2 }, \"class_type\": \"PrimitiveInt\" },\n  \"186:151\": { \"inputs\": { \"value\": 4 }, \"class_type\": \"PrimitiveInt\" },\n  \"186:152\": { \"inputs\": { \"switch\": [\"186:139\", 0], \"on_false\": [\"185:159\", 0], \"on_true\": [\"186:146\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:153\": { \"inputs\": { \"switch\": [\"186:139\", 0], \"on_false\": [\"186:143\", 0], \"on_true\": [\"186:150\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:154\": { \"inputs\": { \"switch\": [\"186:139\", 0], \"on_false\": [\"186:137\", 0], \"on_true\": [\"186:151\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:155\": { \"inputs\": { \"switch\": [\"186:139\", 0], \"on_false\": [\"186:144\", 0], \"on_true\": [\"186:149\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:156\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:157\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:157\": { \"inputs\": { \"switch\": [\"186:139\", 0], \"on_false\": [\"185:142\", 0], \"on_true\": [\"186:145\", 0] }, \"class_type\": \"ComfySwitchNode\" }\n};\n\nreturn { json: { prompt: workflow } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        1008
+      ],
+      "id": "58364045-46f7-4250-895b-e350f19c07a6",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ JSON.stringify($json.comfy_json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        992,
+        1008
+      ],
+      "id": "3900bcc0-3e46-49fb-a7f1-a6e4088bd97c",
+      "name": "IMG2Vid"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -800,
+        -608
+      ],
+      "id": "2948440e-776d-4826-8ec3-3726104db3c3",
+      "name": "Batch 2"
+    },
+    {
+      "parameters": {
+        "content": "# Video\n # Upscaled  ",
+        "color": "#FF00FF"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        960
+      ],
+      "id": "c7dbead8-a029-484a-b94c-a458146f87fc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n # 10240x5760 10k",
+        "height": 144,
+        "width": 288,
+        "color": "#00FFFF"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        240
+      ],
+      "id": "5729891e-5d6d-4cf5-9687-9481c9e18098",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n # 2560x1440  QHD",
+        "width": 320,
+        "color": "#000080"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -512
+      ],
+      "id": "af7033fe-fee2-43cd-b41e-337dc70540c7",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n # 5120 x 2880 5k",
+        "width": 288,
+        "color": "#0000FF"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        -96
+      ],
+      "id": "ebf7a1bd-8c84-4ccb-b32a-d70d5d0de958",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {
+          "reset": true
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1232,
+        1776
+      ],
+      "id": "1c464edc-6300-4734-9f9b-8bfffb2b61af",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Batch has completed successfully"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        336,
+        1472
+      ],
+      "id": "09075a2f-e846-4496-a8f3-be3837855f87",
+      "name": "Job Complete1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Task: Create a structured description for a PURELY ABSTRACT art sequence focusing on HIGH-DISPLACEMENT PHYSICAL MOTION.\\n\\nVariables:\\n- Atmosphere: {{ $json.atmosphere }}\\n- Texture: {{ $json.texture }}\\n- Palette: {{ $json.palette }}\\n- Lighting: {{ $json.lighting }}\\n- Motion: {{ $json.motion }}\\n- Quality: {{ $json.quality_boosters }}\\n\\nNegative Constraints: {{ $json.negatives }}\\n\\nReturn ONLY a JSON object:\\n1. 'image_prompt': Start with '[Palette] [Texture]'. Create a one-sentence description focusing on 'Macro photography of {{ $json.texture }} in {{ $json.palette }} with {{ $json.lighting }} within {{ $json.atmosphere }}. {{ $json.quality_boosters }}'.\\n2. 'motion_description': Begin with the primary action verb from '{{ $json.motion }}'. Describe a radical physical transformation across the X, Y, and Z axes. Use high-action verbs like 'extrude', 'spiral', 'displace', or 'reconfigure'. Avoid words like 'flicker', 'shimmer', or 'pulse'. Ensure elements move significantly across the frame.\\n\\nFinal Instruction: The motion must be mechanical or physical, not just light changing. NO metaphors.\",\n  \"stream\": false,\n  \"format\": \"json\",\n  \"options\": {\n    \"temperature\": 1.1,\n    \"seed\": {{ $json.seed }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        560,
+        1248
+      ],
+      "id": "427feaad-4ae6-4ede-b1ba-0efd0207d5c2",
+      "name": "Ollama Prompt Gen12",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nlet rawContent = \"\";\n\n// 1. EXTRACT RAW CONTENT\nif (inputData.response) {\n    rawContent = inputData.response; \n} else if (inputData.message && inputData.message.content) {\n    rawContent = inputData.message.content;\n} else if (typeof inputData === 'string') {\n    rawContent = inputData;\n} else {\n    rawContent = JSON.stringify(inputData);\n}\n\n// 2. PARSE AND VALIDATE\nlet data = { image_prompt: \"\", motion_description: \"\" };\n\ntry {\n    let parsedOuter;\n    try {\n        parsedOuter = JSON.parse(rawContent);\n    } catch (e) {\n        const match = rawContent.match(/\\{[\\s\\S]*\\}/);\n        if (!match) throw new Error(\"No JSON structure found.\");\n        parsedOuter = JSON.parse(match[0]);\n    }\n    if (parsedOuter) {\n        let innerContent = parsedOuter.response || parsedOuter;\n        let finalData = (typeof innerContent === 'string') ? JSON.parse(innerContent) : innerContent;\n        data.image_prompt = finalData.image_prompt;\n        data.motion_description = finalData.motion_description;\n    }\n} catch (e) {\n    throw new Error(`STRICT VALIDATION FAILED: ${e.message}`);\n}\n\n// 3. DYNAMIC PATHING\nconst d = new Date();\nconst batchFolder = `Batch_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}_${d.getHours().toString().padStart(2, '0')}${d.getMinutes().toString().padStart(2, '0')}`;\n\n// 4. THE ULTRA EYE CANDY WORKFLOW (REVISED)\nlet workflow = {\n  // --- FLUX GEN (30 STEPS FOR ULTRA DETAIL) ---\n  \"132:1\": { \"inputs\": { \"scheduler\": \"karras\", \"steps\": 30, \"denoise\": 1.0, \"model\": [\"132:7\", 0] }, \"class_type\": \"BasicScheduler\" },\n  \"132:2\": { \"inputs\": { \"sampler_name\": \"euler_ancestral\" }, \"class_type\": \"KSamplerSelect\" },\n  \"132:3\": { \"inputs\": { \"guidance\": 4.5, \"conditioning\": [\"132:17\", 0] }, \"class_type\": \"FluxGuidance\" },\n  \"132:4\": { \"inputs\": { \"model\": [\"132:7\", 0], \"conditioning\": [\"132:3\", 0] }, \"class_type\": \"BasicGuider\" },\n  \"132:5\": { \"inputs\": { \"noise\": [\"132:6\", 0], \"guider\": [\"132:4\", 0], \"sampler\": [\"132:2\", 0], \"sigmas\": [\"132:1\", 0], \"latent_image\": [\"132:8\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n  \"132:6\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n  \"132:7\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 832, \"height\": 480, \"model\": [\"132:14\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n  \"132:8\": { \"inputs\": { \"width\": 832, \"height\": 480, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n  \"132:10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"132:12\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n  \"132:14\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"fp8_e4m3fn\" }, \"class_type\": \"UNETLoader\" },\n  \"132:17\": { \"inputs\": { \"text\": data.image_prompt, \"clip\": [\"132:12\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"132:13\": { \"inputs\": { \"samples\": [\"132:5\", 0], \"vae\": [\"132:10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n  // --- WAN 2.2 HIGH-ENERGY MOTION (81 FRAMES @ CFG 4.5) ---\n  \"185:140\": { \"inputs\": { \"vae_name\": \"wan_2.1_vae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"185:141\": { \"inputs\": { \"clip_name\": \"umt5_xxl_fp8_e4m3fn_scaled.safetensors\", \"type\": \"wan\" }, \"class_type\": \"CLIPLoader\" },\n  \"183:173\": { \"inputs\": { \"width\": 832, \"height\": 480, \"length\": 81, \"batch_size\": 1, \"positive\": [\"187:158\", 0], \"negative\": [\"187:136\", 0], \"vae\": [\"185:140\", 0], \"start_image\": [\"132:13\", 0], \"end_image\": [\"132:13\", 0] }, \"class_type\": \"WanFirstLastFrameToVideo\" },\n  \"187:158\": { \"inputs\": { \"text\": data.motion_description, \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"187:136\": { \"inputs\": { \"text\": \"human, face, skin, animal, creature, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature\", \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"185:142\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"185:159\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"186:135\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:152\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:139\": { \"inputs\": { \"value\": true }, \"class_type\": \"PrimitiveBoolean\" },\n  \"186:145\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:142\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:146\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:159\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:147\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000), \"steps\": 8, \"cfg\": 4.5, \"sampler_name\": \"euler_ancestral\", \"scheduler\": \"simple\", \"denoise\": 1.0, \"model\": [\"186:135\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"183:173\", 2], \"add_noise\": \"enable\", \"start_at_step\": 0, \"end_at_step\": 4, \"return_with_leftover_noise\": \"enable\" }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:148\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000), \"steps\": 8, \"cfg\": 4.5, \"sampler_name\": \"euler_ancestral\", \"scheduler\": \"simple\", \"denoise\": 1.0, \"model\": [\"186:156\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"186:147\", 0], \"add_noise\": \"disable\", \"start_at_step\": 4, \"end_at_step\": 8, \"return_with_leftover_noise\": \"disable\" }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:152\": { \"inputs\": { \"on_false\": [\"185:159\", 0], \"on_true\": [\"186:146\", 0], \"switch\": [\"186:139\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:156\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:157\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:157\": { \"inputs\": { \"on_false\": [\"185:142\", 0], \"on_true\": [\"186:145\", 0], \"switch\": [\"186:139\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n\n  // --- HYBRID TILING (MATCHES VIDEO WIDTH 832) ---\n  \"138\": { \"inputs\": { \"tile_size\": 832, \"overlap\": 128, \"temporal_size\": 32, \"temporal_overlap\": 16, \"samples\": [\"186:148\", 0], \"vae\": [\"185:140\", 0] }, \"class_type\": \"VAEDecodeTiled\" },\n  \"186\": { \"inputs\": { \"image\": [\"138\", 0], \"unload_all_models\": true, \"aggressive\": true }, \"class_type\": \"FreeMemoryImage\" },\n\n  // --- RIFE INTERPOLATION (60FPS FOR LIQUID SMOOTHNESS) ---\n  \"191\": { \"inputs\": { \"model_name\": \"rife49_ensemble_True_scale_1_sim\", \"resolution_profile\": \"small\", \"model\": \"rife49_ensemble_True_scale_1_sim\", \"precision\": \"fp16\" }, \"class_type\": \"AutoLoadRifeTensorrtModel\" },\n  \"190\": { \"inputs\": { \"fps\": 60, \"multiplier\": 4, \"ensemble\": true, \"fast_mode\": false, \"keep_model_loaded\": false, \"use_cuda_graph\": false, \"clear_cache_after_n_frames\": 10, \"frames\": [\"186\", 0], \"rife_trt_model\": [\"191\", 0] }, \"class_type\": \"AutoRifeTensorrt\" },\n  \"194\": { \"inputs\": { \"images\": [\"190\", 0], \"filename_prefix\": `${batchFolder}/Wan5080_UltraFinal` }, \"class_type\": \"SaveImage\" }\n};\n\nreturn [{ json: { prompt: workflow } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        1248
+      ],
+      "id": "ff05ed5a-482f-4397-b7fa-760260a37809",
+      "name": "Code in JavaScript16"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1008,
+        1248
+      ],
+      "id": "e66da2ee-a422-4f85-a9b3-2d148ecb555b",
+      "name": "Working Flux 2x Upscale9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"format\": \"json\",\n  \"prompt\": \"Task: Create a JSON object for an abstract masterpiece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. Rules: High-key only. NO dark colors, NO steampunk. Output exactly two keys: 1. 'image_prompt' (A short, 5-10 word punchy visual description). 2. 'motion_description' (Set this to: 'Ultra-smooth 3D centrifugal extrusion, rotating geometric flow, deep parallax shift').\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        1776
+      ],
+      "id": "7e07dfbd-62b5-48a8-88b5-a6ebbd89be6a",
+      "name": "Ollama Prompt Gen13",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nlet rawContent = \"\";\n\n// 1. EXTRACT RAW CONTENT\nif (inputData.response) {\n    rawContent = inputData.response; \n} else if (inputData.message && inputData.message.content) {\n    rawContent = inputData.message.content;\n} else if (typeof inputData === 'string') {\n    rawContent = inputData;\n} else {\n    rawContent = JSON.stringify(inputData);\n}\n\n// 2. PARSE AND VALIDATE\nlet data = { image_prompt: \"\", motion_description: \"\" };\n\ntry {\n    let parsedOuter;\n    try {\n        parsedOuter = JSON.parse(rawContent);\n    } catch (e) {\n        const match = rawContent.match(/\\{[\\s\\S]*\\}/);\n        if (!match) throw new Error(\"No JSON structure found.\");\n        parsedOuter = JSON.parse(match[0]);\n    }\n    if (parsedOuter) {\n        let innerContent = parsedOuter.response || parsedOuter;\n        let finalData = (typeof innerContent === 'string') ? JSON.parse(innerContent) : innerContent;\n        data.image_prompt = finalData.image_prompt;\n        data.motion_description = finalData.motion_description;\n    }\n} catch (e) {\n    throw new Error(`STRICT VALIDATION FAILED: ${e.message}`);\n}\n\n// 3. DYNAMIC PATHING\nconst d = new Date();\nconst batchFolder = `Batch_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}_${d.getHours().toString().padStart(2, '0')}${d.getMinutes().toString().padStart(2, '0')}`;\n\n// 4. THE ULTRA EYE CANDY WORKFLOW (REVISED WITH PREVIEWS)\nlet workflow = {\n  // --- FLUX GEN ---\n  \"132:1\": { \"inputs\": { \"scheduler\": \"karras\", \"steps\": 30, \"denoise\": 1.0, \"model\": [\"132:7\", 0] }, \"class_type\": \"BasicScheduler\" },\n  \"132:2\": { \"inputs\": { \"sampler_name\": \"euler_ancestral\" }, \"class_type\": \"KSamplerSelect\" },\n  \"132:3\": { \"inputs\": { \"guidance\": 4.5, \"conditioning\": [\"132:17\", 0] }, \"class_type\": \"FluxGuidance\" },\n  \"132:4\": { \"inputs\": { \"model\": [\"132:7\", 0], \"conditioning\": [\"132:3\", 0] }, \"class_type\": \"BasicGuider\" },\n  \"132:5\": { \"inputs\": { \"noise\": [\"132:6\", 0], \"guider\": [\"132:4\", 0], \"sampler\": [\"132:2\", 0], \"sigmas\": [\"132:1\", 0], \"latent_image\": [\"132:8\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n  \"132:6\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n  \"132:7\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 832, \"height\": 480, \"model\": [\"132:14\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n  \"132:8\": { \"inputs\": { \"width\": 832, \"height\": 480, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n  \"132:10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"132:12\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n  \"132:14\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"fp8_e4m3fn\" }, \"class_type\": \"UNETLoader\" },\n  \"132:17\": { \"inputs\": { \"text\": data.image_prompt, \"clip\": [\"132:12\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"132:13\": { \"inputs\": { \"samples\": [\"132:5\", 0], \"vae\": [\"132:10\", 0] }, \"class_type\": \"VAEDecode\" },\n  \n  // NEW: FLUX STILL IMAGE PREVIEW\n  \"132:999\": { \"inputs\": { \"images\": [\"132:13\", 0] }, \"class_type\": \"PreviewImage\" },\n\n  // --- WAN 2.2 MOTION ---\n  \"185:140\": { \"inputs\": { \"vae_name\": \"wan_2.1_vae.safetensors\" }, \"class_type\": \"VAELoader\" },\n  \"185:141\": { \"inputs\": { \"clip_name\": \"umt5_xxl_fp8_e4m3fn_scaled.safetensors\", \"type\": \"wan\" }, \"class_type\": \"CLIPLoader\" },\n  \"183:173\": { \"inputs\": { \"width\": 832, \"height\": 480, \"length\": 121, \"batch_size\": 1, \"positive\": [\"187:158\", 0], \"negative\": [\"187:136\", 0], \"vae\": [\"185:140\", 0], \"start_image\": [\"132:13\", 0], \"end_image\": [\"132:13\", 0] }, \"class_type\": \"WanFirstLastFrameToVideo\" },\n  \"187:158\": { \"inputs\": { \"text\": data.motion_description, \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"187:136\": { \"inputs\": { \"text\": \"human, face, skin, animal, creature, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature\", \"clip\": [\"185:141\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n  \"185:142\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"185:159\": { \"inputs\": { \"unet_name\": \"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n  \"186:135\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:152\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:139\": { \"inputs\": { \"value\": true }, \"class_type\": \"PrimitiveBoolean\" },\n  \"186:145\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:142\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:146\": { \"inputs\": { \"lora_name\": \"wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors\", \"strength_model\": 1.0, \"model\": [\"185:159\", 0] }, \"class_type\": \"LoraLoaderModelOnly\" },\n  \"186:147\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000), \"steps\": 8, \"cfg\": 4.5, \"sampler_name\": \"euler_ancestral\", \"scheduler\": \"simple\", \"denoise\": 1.0, \"model\": [\"186:135\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"183:173\", 2], \"add_noise\": \"enable\", \"start_at_step\": 0, \"end_at_step\": 4, \"return_with_leftover_noise\": \"enable\" }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:148\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000), \"steps\": 8, \"cfg\": 4.5, \"sampler_name\": \"euler_ancestral\", \"scheduler\": \"simple\", \"denoise\": 1.0, \"model\": [\"186:156\", 0], \"positive\": [\"183:173\", 0], \"negative\": [\"183:173\", 1], \"latent_image\": [\"186:147\", 0], \"add_noise\": \"disable\", \"start_at_step\": 4, \"end_at_step\": 8, \"return_with_leftover_noise\": \"disable\" }, \"class_type\": \"KSamplerAdvanced\" },\n  \"186:152\": { \"inputs\": { \"on_false\": [\"185:159\", 0], \"on_true\": [\"186:146\", 0], \"switch\": [\"186:139\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n  \"186:156\": { \"inputs\": { \"shift\": 5.0, \"model\": [\"186:157\", 0] }, \"class_type\": \"ModelSamplingSD3\" },\n  \"186:157\": { \"inputs\": { \"on_false\": [\"185:142\", 0], \"on_true\": [\"186:145\", 0], \"switch\": [\"186:139\", 0] }, \"class_type\": \"ComfySwitchNode\" },\n\n  // --- HYBRID TILING ---\n  \"138\": { \"inputs\": { \"tile_size\": 832, \"overlap\": 128, \"temporal_size\": 32, \"temporal_overlap\": 16, \"samples\": [\"186:148\", 0], \"vae\": [\"185:140\", 0] }, \"class_type\": \"VAEDecodeTiled\" },\n  \n  // NEW: VIDEO FRAME PREVIEW (Before RIFE)\n  \"186:999\": { \"inputs\": { \"images\": [\"138\", 0] }, \"class_type\": \"PreviewImage\" },\n\n  \"186\": { \"inputs\": { \"image\": [\"138\", 0], \"unload_all_models\": true, \"aggressive\": true }, \"class_type\": \"FreeMemoryImage\" },\n\n  // --- RIFE ---\n  \"191\": { \"inputs\": { \"model_name\": \"rife49_ensemble_True_scale_1_sim\", \"resolution_profile\": \"small\", \"model\": \"rife49_ensemble_True_scale_1_sim\", \"precision\": \"fp16\" }, \"class_type\": \"AutoLoadRifeTensorrtModel\" },\n  \"190\": { \"inputs\": { \"fps\": 60, \"multiplier\": 8, \"ensemble\": true, \"fast_mode\": false, \"keep_model_loaded\": false, \"use_cuda_graph\": false, \"clear_cache_after_n_frames\": 10, \"frames\": [\"186\", 0], \"rife_trt_model\": [\"191\", 0] }, \"class_type\": \"AutoRifeTensorrt\" },\n  \"194\": { \"inputs\": { \"images\": [\"190\", 0], \"filename_prefix\": `${batchFolder}/Wan5080_UltraFinal` }, \"class_type\": \"SaveImage\" }\n};\n\nreturn [{ json: { prompt: workflow } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1696
+      ],
+      "id": "7771c0e8-cb97-48ae-b77a-0019345f5033",
+      "name": "Code in JavaScript17"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        1696
+      ],
+      "id": "54359bde-ddf6-40d8-ada5-d1f74ec8c521",
+      "name": "Working Flux 2x Upscale10"
+    },
+    {
+      "parameters": {
+        "amount": 20,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        1696
+      ],
+      "id": "7d8a6582-1221-4cfd-bbea-b972e4f43b27",
+      "name": "Wait",
+      "webhookId": "44ece4f3-1220-43d8-8a78-7da85ffe7ab3"
+    },
+    {
+      "parameters": {
+        "amount": 140
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        352
+      ],
+      "id": "edfd7271-0a9e-4afa-b2a7-9d8f58ac1e0d",
+      "name": "Wait1",
+      "webhookId": "67a934b5-3cd0-42c5-ab1d-ab334166b5f2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        288,
+        -800
+      ],
+      "id": "9b104e81-df7f-4436-9958-1412314a8b8d",
+      "name": "Ollama Prompt Gen14",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, (no humans, no faces, no nudity, no people, no living creatures, no steampunk, no castles, no dark colors, no gloom, no text:1.5)`;\n\nreturn {\n  comfy_json: {\n    \"prompt\": {\n      \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n      \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n      \"9\": { \"inputs\": { \"filename_prefix\": \"832x480_Flux\", \"images\": [\"8\", 0] }, \"class_type\": \"SaveImage\" },\n      \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n      \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n      \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n      \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n      \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n      \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n      \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n      \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n      \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n      \"27\": { \"inputs\": { \"width\": 960, \"height\": 540, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n      \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 1024, \"height\": 1024, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -800
+      ],
+      "id": "de784eec-6c2d-4015-9a1d-5d110989acda",
+      "name": "Code in JavaScript18"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{ JSON.stringify($json.comfy_json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        -800
+      ],
+      "id": "8a7a444f-e2a7-4d27-8b4b-a4461c85383e",
+      "name": "Working Flux Gen1"
+    },
+    {
+      "parameters": {
+        "batchSize": 4,
+        "options": {
+          "reset": true
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        -736
+      ],
+      "id": "3093e32a-6261-461e-9f7e-1ebe343de178",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n## 960x540",
+        "width": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -848
+      ],
+      "id": "7849ddab-c4a5-4bfc-a4fa-5e62a19dd44b",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        -800
+      ],
+      "id": "7aff24ea-9807-4cdc-bdef-1da62c4114fe",
+      "name": "Wait2",
+      "webhookId": "51f9730c-78f0-4820-89e0-d28665f70086"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, (no humans, no faces, no nudity, no people, no living creatures, no steampunk, no castles, no dark colors, no gloom, no text:1.5)`;\n\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Flux_${loopIndex}`, // Creates subfolder 832x480 and unique filename\n            \"images\": [\"8\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 960, \"height\": 540, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 960, \"height\": 540, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"8\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"success\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -1168
+      ],
+      "id": "8f37cfde-7b8d-4105-a72c-eefa2b22c9c6",
+      "name": "Code in JavaScript19"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ JSON.stringify({ \"prompt\": $json }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        -1168
+      ],
+      "id": "0aa580f4-596e-4ada-8c65-3bd336725cbd",
+      "name": "Working Flux Gen2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        -1168
+      ],
+      "id": "a76c01e7-aa5d-4a75-bb60-c59878450a08",
+      "name": "Ollama Prompt Gen15",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -112,
+        -1168
+      ],
+      "id": "cccc37b7-30a6-4c57-8b9f-196dfdbb7209",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n # 960x540 ##AUTOMATED WORKFLOW\n",
+        "height": 208,
+        "width": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -1168
+      ],
+      "id": "520d475e-2b10-4da3-9f2d-76789e3bee89",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "Change Constraint Value To Desired Quantitiy",
+        "height": 80,
+        "width": 208,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        -1264
+      ],
+      "id": "2bda9fbe-deff-41ee-82a0-b9eb97fc2d2a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        -1168
+      ],
+      "id": "72d9a283-ba45-4f54-b0ad-f5e71f8fba0e",
+      "name": "Webhook",
+      "webhookId": "777abe11-d28c-4f69-9cad-59dbae9557d8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const count = 5; // Set this to 3, 10, or 52390439043\nreturn Array.from({ length: count }, (_, i) => ({ json: { iteration: i + 1 } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -1168
+      ],
+      "id": "1923ef9e-733d-43b2-bcf3-6af3b18282a1",
+      "name": "Counter Set"
+    },
+    {
+      "parameters": {
+        "jsCode": "const count = 10; // Set this to 3, 10, or 52390439043\nreturn Array.from({ length: count }, (_, i) => ({ json: { iteration: i + 1 } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -1440
+      ],
+      "id": "4f99b0c6-a307-4c2f-aa23-f436aa2f92a2",
+      "name": "Counter Set1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -112,
+        -1440
+      ],
+      "id": "df6fe0c9-d751-467c-bc93-2654ec2e8346",
+      "name": "Loop Over Items4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, `;\n\n// Return the raw workflow nodes directly as the top-level object\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 2560, \"height\": 1440, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: 10K UPSCALE (4x) ---\n    \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_10K_${loopIndex}`, \n            \"images\": [\"40\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK (Triggered by 10K completion) ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"40\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -1440
+      ],
+      "id": "d4c95d52-1bfc-4212-9b49-03c1285016e9",
+      "name": "Code in JavaScript20"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ JSON.stringify({ \"prompt\": $json }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        -1440
+      ],
+      "id": "7a9df955-37ba-43fc-a68c-9210090e7817",
+      "name": "Working Flux Gen3"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        -1440
+      ],
+      "id": "431fab0f-f35a-45fc-81f3-7eb58fa731ae",
+      "name": "Webhook1",
+      "webhookId": "777abe11-d28c-4f69-9cad-59dbae9557d8"
+    },
+    {
+      "parameters": {
+        "content": "# Abstract Image \n # 10240x5760 ##AUTOMATED WORKFLOW\n",
+        "height": 208,
+        "width": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -1472
+      ],
+      "id": "8a9fc949-a556-42d9-8210-915aed4f449d",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Write a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece. Atmosphere: {{ ['Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering', 'Crisp and minimalist'][Math.floor(Math.random() * 4)] }}. Texture: {{ ['Fluid Oil Paint', 'Fluid iridescent silk', 'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders'][Math.floor(Math.random() * 4)] }}. Palette: {{ ['Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', 'Bright Gold and Sky Blue'][Math.floor(Math.random() * 4)] }}. NO dark colors, NO steampunk, NO castles, NO gloom. High-key lighting only.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        -1440
+      ],
+      "id": "3693e01a-b05a-4996-b1e5-02e295d35023",
+      "name": "Ollama Prompt Gen16",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:8188/prompt",
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ JSON.stringify({ \"prompt\": $json }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        -1824
+      ],
+      "id": "d6f791c2-add2-4aab-b2a7-1e0966cf2ef5",
+      "name": "Working Flux Gen4"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        -1824
+      ],
+      "id": "c23a974b-4bb0-470a-baec-1890b3017144",
+      "name": "Webhook2",
+      "webhookId": "777abe11-d28c-4f69-9cad-59dbae9557d8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const count = 500; // Set this to 3, 10, or 52390439043\nreturn Array.from({ length: count }, (_, i) => ({ json: { iteration: i + 1 } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -1824
+      ],
+      "id": "bed9da2d-5489-4035-b0c6-daa23f3d28c1",
+      "name": "Counter Set2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -384,
+        -1824
+      ],
+      "id": "21dbe7e2-f289-47af-b24b-4270cb438126",
+      "name": "Loop Over Items5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering light', \n    'Crisp and minimalist geometry', 'Deep-sea bioluminescent energy', 'Frozen arctic midnight', \n    'High-tech neural laboratory', 'Neon-drenched digital void', 'Volcanic heat and embers'\n];\n\nconst textures = [\n    'Intricate neural network webs', 'Glowing synaptic pathways', 'Whirling smoke plumes', \n    'Distorted heat-wave refraction', 'Arcing electric bolts',\n    'Thick Paint Splatter', 'Fluid liquid metal', 'Fluid iridescent silk', \n    'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders', \n    'liquid paint splash', 'Microscopic ferrofluid spikes', 'Molten obsidian flow'\n];\n\nconst palettes = [\n    'Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf'\n];\n\nconst lighting = [\n    'Soft Global Illumination', 'Harsh Rim Lighting', 'Volumetric God-rays', \n    'Cinematic Backlit silhouettes', 'Ray-traced caustic reflections', \n    'Internal subsurface scattering', 'Flickering strobe pulses'\n];\n\n// Motion commented out for Still Image Selection Phase\n/*\nconst motions = [\n    'The structures physically extrude and spiral outward in a 3D vortex on the Z-axis',\n    'The shards collide and fuse together into a singular rotating solid with high-velocity torque',\n    'The neural webs tighten and pull inward, warping the surrounding space in a gravitational collapse'\n];\n*/\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    lighting: lighting[Math.floor(Math.random() * lighting.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"8k resolution, cinematic macro photography, ray-traced reflections, highly detailed, crisp geometry\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -1824
+      ],
+      "id": "530ae39c-1b1a-4ad5-a49a-aaaeaa14840f",
+      "name": "Script Randomizer - No Motion"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering light', \n    'Crisp and minimalist geometry', 'Deep-sea bioluminescent energy', 'Frozen arctic midnight', \n    'High-tech neural laboratory', 'Neon-drenched digital void', 'Volcanic heat and embers'\n];\n\nconst textures = [\n    'Intricate neural network webs', 'Glowing synaptic pathways', 'Whirling smoke plumes', \n    'Distorted heat-wave refraction', 'Arcing electric bolts',\n    'Thick Paint Splatter', 'Fluid liquid metal', 'Fluid iridescent silk', \n    'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders', \n    'liquid paint splash', 'Microscopic ferrofluid spikes', 'Molten obsidian flow'\n];\n\nconst palettes = [\n    'Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf'\n];\n\nconst lighting = [\n    'Soft Global Illumination', 'Harsh Rim Lighting', 'Volumetric God-rays', \n    'Cinematic Backlit silhouettes', 'Ray-traced caustic reflections', \n    'Internal subsurface scattering', 'Flickering strobe pulses'\n];\n\nconst motions = [\n    'The structures physically extrude and spiral outward in a 3D vortex on the Z-axis',\n    'The shards collide and fuse together into a singular rotating solid with high-velocity torque',\n    'The neural webs tighten and pull inward, warping the surrounding space in a gravitational collapse',\n    'A powerful centrifugal force tears the liquid metal into distinct geometric rings that spin rapidly',\n    'The smoke plumes solidify into crystalline pillars that rise vertically with architectural precision',\n    'The surface layers peel back in a cascading wave to reveal a core of blinding intensity',\n    'The entire composition undergoes a 180-degree kaleidoscopic flip and architectural rebuild',\n    'The threads of silk tightly braid themselves into thick, twisting cables with extreme tension',\n    'The particles undergo a massive thermal expansion, doubling in physical size and displacing the frame'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    lighting: lighting[Math.floor(Math.random() * lighting.length)],\n    motion: motions[Math.floor(Math.random() * motions.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    // Quality Boosters for Llama to inject into prompts\n    quality_boosters: \"8k resolution, cinematic macro photography, ray-traced reflections, highly detailed, crisp geometry\",\n    // Enhanced Negative Constraints for ComfyUI\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, jittery motion, flickering light.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        1248
+      ],
+      "id": "7885c89d-222b-4186-927f-beb543649881",
+      "name": "Script Randomizer Motion"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Task: Create a one-sentence highly descriptive image prompt for a stunning, high-vibrancy abstract piece.\\n\\nVariables:\\n- Atmosphere: {{ $json.atmosphere }}\\n- Texture: {{ $json.texture }}\\n- Palette: {{ $json.palette }}\\n- Light Quality: {{ $json.lightQuality }}\\n- Quality: {{ $json.quality_boosters }}\\n\\nInstructions:\\n- Return ONLY the prompt text.\\n- Focus on vibrant colors and macro detail.\\n- NO dark colors, NO steampunk, NO castles, NO gloom.\\n- Structure: Describe the interaction of {{ $json.texture }} and {{ $json.palette }} with {{ $json.lightQuality }} qualities.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0,\n    \"seed\": {{ $json.seed }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        -1824
+      ],
+      "id": "4f2ef939-4f71-49f0-8392-8ed88132c82a",
+      "name": "Ollama Prompt From Randomizer",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, `;\n\n// Return the raw workflow nodes directly as the top-level object\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 2560, \"height\": 1440, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: 10K UPSCALE (4x) ---\n    \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_10K_${loopIndex}`, \n            \"images\": [\"40\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK (Triggered by 10K completion) ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"40\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        -1552
+      ],
+      "id": "d466215e-0452-44bc-bae8-5a585ecb2b39",
+      "name": "Ollama - Comfy Ui "
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OLM5ebxWeTtZIvBv",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        512
+      ],
+      "name": "Call img2vid progression",
+      "id": "2bd706ff-2f24-4885-97af-f59f63e73565"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, `;\n\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 10240, \"height\": 5760, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 10240, \"height\": 5760, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: NATIVE 10K (Upscale Bypassed) ---\n    /* \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    */\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_Native_10K_${loopIndex}`, \n            \"images\": [\"8\", 0] // Linked directly to VAEDecode (Node 8)\n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"8\", 0], // Linked directly to VAEDecode (Node 8)\n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        -1776
+      ],
+      "id": "57ac04e7-6e7d-42a3-912d-53b8b63b77be",
+      "name": "Ollama - Comfy Ui 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, `;\n\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 10240, \"height\": 5760, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 10240, \"height\": 5760, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: NATIVE 10K (Upscale Bypassed) ---\n    /* \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    */\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_Native_10K_${loopIndex}`, \n            \"images\": [\"8\", 0] // Linked directly to VAEDecode (Node 8)\n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"8\", 0], // Linked directly to VAEDecode (Node 8)\n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        -2000
+      ],
+      "id": "f36f7d5a-e39b-4f06-8da7-615dfceefdc7",
+      "name": "Ollama - Comfy Ui 2"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "NwIeYFqgCmjJNNDC",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/NwIeYFqgCmjJNNDC",
+          "cachedResultName": "StopAI"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        64
+      ],
+      "name": "Call StopAI",
+      "id": "e05b64b0-3167-4a07-9c7b-e85d591064d5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -592
+      ],
+      "id": "aa2cdd31-966b-478d-98ee-fe3e786c7717",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "command": "schtasks /run /tn \"StopOllama\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -2032
+      ],
+      "id": "675c54fc-01fc-4908-89f6-6ec3890bfe27",
+      "name": "Stop Ollama",
+      "credentials": {
+        "sshPassword": {
+          "id": "LO9NSV7j51Olw5xK",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "schtasks /run /tn \"StartOllama\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -1824
+      ],
+      "id": "52e7e616-62cb-4a1a-85d3-c4a1e5a1ec5f",
+      "name": "Start Ollama",
+      "credentials": {
+        "sshPassword": {
+          "id": "LO9NSV7j51Olw5xK",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "schtasks /run /tn \"StopAI\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        -1760
+      ],
+      "id": "5d5f3331-8e02-4cbf-836f-1a08de9e7bbc",
+      "name": "Stop AI",
+      "credentials": {
+        "sshPassword": {
+          "id": "LO9NSV7j51Olw5xK",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "schtasks /run /tn \"StartAI\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        -1760
+      ],
+      "id": "e911d791-1255-429e-8a1f-a86177254da6",
+      "name": "Start AI",
+      "credentials": {
+        "sshPassword": {
+          "id": "LO9NSV7j51Olw5xK",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -592,
+        -1824
+      ],
+      "id": "9408e68c-1d5e-4e66-9ab5-1c72712b15dc",
+      "name": "Wait5",
+      "webhookId": "2e7b5eb6-ff2c-41fa-bfec-45084261bbc5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const n8nWebhookUrl = $execution.resumeUrl; \nconst loopIndex = $node[\"Loop Over Items3\"].index;\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, sharp edges, hyper-detailed textures, 8k wallpaper, ${responseText}, `;\n\nreturn {\n    // --- LOADERS ---\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-dev-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"41_loader\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n\n    // --- STAGE 1: THE BASE (2K) ---\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"27\": { \"inputs\": { \"width\": 2048, \"height\": 1152, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"beta\", \"steps\": 25, \"denoise\": 1, \"model\": [\"12\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"26\": { \"inputs\": { \"guidance\": 3.5, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"22\": { \"inputs\": { \"model\": [\"12\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- STAGE 2: PREP FOR 10K (Model Upscale) ---\n    \"40\": { \n        \"inputs\": { \n            \"upscale_model\": [\"41_loader\", 0], // FIXED: Properly linked loader\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageUpscaleWithModel\" \n    },\n    \"41\": { \"inputs\": { \"pixels\": [\"40\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEEncode\" },\n    \n    // --- STAGE 3: THE REFINER (Tiled Detail Injection) ---\n    \"42\": {\n        \"inputs\": {\n            \"model\": [\"12\", 0],\n            \"method\": \"MultiDiffusion\",\n            \"tile_width\": 1024,\n            \"tile_height\": 1024,\n            \"tile_overlap\": 128,\n            \"tile_batch_size\": 4,\n            \"tile_strategy\": \"balanced\"\n        },\n        \"class_type\": \"TiledDiffusion\"\n    },\n    \"45\": { \"inputs\": { \"scheduler\": \"beta\", \"steps\": 10, \"denoise\": 0.35, \"model\": [\"42\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"44\": { \"inputs\": { \"model\": [\"42\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"43\": { \n        \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"44\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"45\", 0], \"latent_image\": [\"41\", 0] }, \n        \"class_type\": \"SamplerCustomAdvanced\" \n    },\n\n    \"46\": { \n        \"inputs\": { \n            \"samples\": [\"43\", 0], \n            \"vae\": [\"10\", 0], \n            \"tile_size\": 1024, \n            \"overlap\": 128,\n            \"temporal_size\": 64,    // FIXED: Added missing temporal requirements\n            \"temporal_overlap\": 8   // FIXED: Added missing temporal requirements\n        }, \n        \"class_type\": \"VAEDecodeTiled\" \n    },\n\n    // --- OUTPUTS ---\n    \"9\": { \"inputs\": { \"filename_prefix\": `CRISP_10K/Flux_10K_${loopIndex}`, \"images\": [\"46\", 0] }, \"class_type\": \"SaveImage\" },\n\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"46\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        -1328
+      ],
+      "id": "dc33222a-07df-492b-930d-1c837f1ded73",
+      "name": "Code in JavaScript21"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'Sun-drenched and airy', 'Electric and energetic', 'Prismatic and shimmering light', \n    'Crisp and minimalist geometry', 'Deep-sea bioluminescent energy', 'Frozen arctic midnight', \n    'High-tech neural laboratory', 'Neon-drenched digital void', 'Volcanic heat and embers',\n    'Minimalist vector-style void', 'Chaotic centrifugal energy', 'Structured layered fluidity',\n    'Atmospheric void with high-contrast shadows', 'Zero-gravity pigment suspension'\n];\n\nconst textures = [\n    'Intricate neural network webs', 'Glowing synaptic pathways', 'Whirling smoke plumes', \n    'Distorted heat-wave refraction', 'Arcing electric bolts',\n    'Thick Paint Splatter', 'Fluid liquid metal', 'Fluid iridescent silk', \n    'Translucent glass shards', 'Glowing fiber optics', 'Explosive pigment powders', \n    'liquid paint splash', 'Microscopic ferrofluid spikes', 'Molten obsidian flow',\n    'Horizontal viscous fluid streaks', 'High-velocity radial paint splatter', \n    'Jagged acrylic drips', 'Smooth teardrop paint beads', 'Centrifugal ink bursts'\n];\n\nconst palettes = [\n    'Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf',\n    'Primary Pop Art (Red, Yellow, Navy, White)', 'Saturated Neon Rainbow on Pitch Black',\n    'High-Contrast CMYK (Cyan, Magenta, Yellow, Key Black)', 'Pastel Chalk on Charcoal Grey'\n];\n\nconst lighting = [\n    'Soft Global Illumination', 'Harsh Rim Lighting', 'Volumetric God-rays', \n    'Cinematic Backlit silhouettes', 'Ray-traced caustic reflections', \n    'Internal subsurface scattering', 'Flickering strobe pulses',\n    'Flat shadowless studio lighting', 'High-contrast center-weighted glow',\n    'Hard directional sunlight', 'Subtle ambient occlusion'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    lighting: lighting[Math.floor(Math.random() * lighting.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"8k resolution, cinematic macro photography, ray-traced reflections, highly detailed, crisp geometry, vibrant saturation\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -2032
+      ],
+      "id": "74a88f12-712e-48bb-ad35-d294fb7af48d",
+      "name": "Script Randomizer - Updated Variables"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `HIGH-KEY VIBRANT ABSTRACT ART, crisp lighting, ${responseText}, `;\n\n// Return the raw workflow nodes directly as the top-level object\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 2560, \"height\": 1440, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: 10K UPSCALE (4x) ---\n    \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_10K_${loopIndex}`, \n            \"images\": [\"40\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK (Triggered by 10K completion) ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"40\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -1824
+      ],
+      "id": "b6f7c15f-8172-4a7a-9c15-f9ea54cc2ca3",
+      "name": "Duplicate From Below"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'modern vector abstract', 'Minimalist vector-style', 'picasso abstract,'\n];\n\nconst textures = [\n    'Oil Paint', 'Paint On Canvas', \n];\n\nconst palettes = [\n    'Tropical Citrus and Turquoise', 'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf',\n    'Primary Pop Art (Red, Yellow, Navy, White)', 'Saturated Neon Rainbow on Pitch Black',\n    'High-Contrast CMYK (Cyan, Magenta, Yellow, Key Black)', 'Pastel Chalk on Charcoal Grey'\n];\n\nconst lighting = [\n    'Soft Global Illumination', 'Harsh Rim Lighting', \n    'Cinematic Backlit silhouettes', \n    'Internal subsurface scattering',\n    'Flat shadowless studio lighting', 'High-contrast center-weighted glow',\n    'Subtle ambient occlusion'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    lighting: lighting[Math.floor(Math.random() * lighting.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"8k resolution, cinematic macro photography, highly detailed, crisp geometry, vibrant saturation\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -2240
+      ],
+      "id": "0d89dbb1-4f7d-49e6-940f-09d52b7a0ad7",
+      "name": "Script Randomizer - Focus Paint"
+    },
+    {
+      "parameters": {
+        "command": "schtasks /run /tn \"StartAI\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        -2496
+      ],
+      "id": "c98aa029-70d7-41a1-b4fc-789abfdbd552",
+      "name": "Start AI1",
+      "credentials": {
+        "sshPassword": {
+          "id": "LO9NSV7j51Olw5xK",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.50.246:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.2:latest\",\n  \"prompt\": \"Task: Create a one-sentence image prompt for a vector style modern abstract art piece.\\n\\nVariables:\\n- Atmosphere: {{ $json.atmosphere }}\\n- Texture: {{ $json.texture }}\\n- Palette: {{ $json.palette }}\\n- Lighting: {{ $json.lighting }}\\n- Quality: {{ $json.quality_boosters }}\\n\\nInstructions:\\n- Return ONLY the prompt text.\\n- Focus on high-key lighting, vibrant colors, and macro detail.\\n- NO dark colors, NO steampunk, NO castles, NO gloom.\\n- Structure: Describe the interaction of {{ $json.texture }} and {{ $json.palette }} under {{ $json.lighting }}.\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 1.0,\n    \"seed\": {{ $json.seed }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -560,
+        -2272
+      ],
+      "id": "fb02ee91-4286-4771-ab95-1bbc884768d5",
+      "name": "Ollama Prompt From Randomizer1",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'modern vector abstract', 'Minimalist vector-style', 'picasso abstract,'\n];\n\nconst textures = [\n    'Oil Paint On Canvas', 'Paint On Canvas', \n];\n\nconst palettes = [\n    'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf',\n    'Primary Pop Art (Red, Yellow, Navy, White)', 'Saturated Neon Rainbow on Pitch Black',\n    'High-Contrast CMYK (Cyan, Magenta, Yellow, Key Black)', 'Pastel Chalk on Charcoal Grey'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"Vector Style Modern Art, highly detailed\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -2496
+      ],
+      "id": "48e186f6-e715-4985-9d47-4acc3ac4b456",
+      "name": "Script Randomizer - Focus Paint1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'modern vector abstract', 'Minimalist vector-style', 'picasso abstract,'\n];\n\nconst textures = [\n    'Oil Paint On Canvas', 'Paint On Canvas', \n];\n\nconst palettes = [\n    'Prismatic Rainbow with White', 'Electric Magenta and Cyan', \n    'Bright Gold and Sky Blue', 'Deep Navy, Cyan, and Fluorescent Pink', \n    'Electric Blue, Turquoise, and Acid Lime', 'Ultramarine, Cerulean, and Neon Magenta', \n    'Deep Teal, Amber, and Burnished Bronze', 'Blood Red, Pitch Black, and Gold Leaf',\n    'Primary Pop Art (Red, Yellow, Navy, White)', 'Saturated Neon Rainbow on Pitch Black',\n    'High-Contrast CMYK (Cyan, Magenta, Yellow, Key Black)', 'Pastel Chalk on Charcoal Grey'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"Vector Style Modern Art, highly detailed\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -2416
+      ],
+      "id": "dce6702b-d6d2-43f0-8c53-da8a2c0ae280",
+      "name": "Script Randomizer - Focus Vector Modern Art"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'modern vector abstract', 'Minimalist vector-style', 'picasso abstract,'\n];\n\nconst textures = [\n    'Oil Paint On Canvas', 'Paint On Canvas', \n];\n\nconst palettes = [\n    'Raw Concrete and Safety Orange', 'Oxidized Copper and Verdigris',\n    'Midnight Indigo and Brushed Steel', 'Desert Ochre and Terracotta',\n    'Forest Floor and Moss', 'Raw Linen and Charcoal',\n    'Dusty Rose and Sage', 'Deep Plum and Champagne',\n    'Slate Blue and Apricot', 'Monochromatic Red (Infrared)',\n    'Iridescent Pearl and Holographic Silver', 'Bauhaus (Ochre, Brick Red, Denim)'\n];\n\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"Vector Style Modern Art, highly detailed\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -2624
+      ],
+      "id": "132b8eff-09a2-439a-8254-2fb8e8bf5545",
+      "name": "Script Randomizer - Colour Pallette Swap"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the dynamic resume URL generated by the Wait Node\nconst n8nWebhookUrl = $execution.resumeUrl; \n\n// Access current loop index to keep filenames unique\nconst loopIndex = $node[\"Loop Over Items3\"].index;\n\nconst responseText = $json.response ? $json.response.replace(/\"/g, '') : \"Abstract vibrant art\";\nconst fullPrompt = `high detail, dynamic composition, abstract modern art, ${responseText}, `;\n\n// Return the raw workflow nodes directly as the top-level object\nreturn {\n    \"6\": { \"inputs\": { \"text\": fullPrompt, \"clip\": [\"11\", 0] }, \"class_type\": \"CLIPTextEncode\" },\n    \"10\": { \"inputs\": { \"vae_name\": \"ae.safetensors\" }, \"class_type\": \"VAELoader\" },\n    \"11\": { \"inputs\": { \"clip_name1\": \"t5xxl_fp8_e4m3fn.safetensors\", \"clip_name2\": \"clip_l.safetensors\", \"type\": \"flux\" }, \"class_type\": \"DualCLIPLoader\" },\n    \"12\": { \"inputs\": { \"unet_name\": \"flux1-schnell-fp8.safetensors\", \"weight_dtype\": \"default\" }, \"class_type\": \"UNETLoader\" },\n    \"13\": { \"inputs\": { \"noise\": [\"25\", 0], \"guider\": [\"22\", 0], \"sampler\": [\"16\", 0], \"sigmas\": [\"17\", 0], \"latent_image\": [\"27\", 0] }, \"class_type\": \"SamplerCustomAdvanced\" },\n    \"16\": { \"inputs\": { \"sampler_name\": \"euler\" }, \"class_type\": \"KSamplerSelect\" },\n    \"17\": { \"inputs\": { \"scheduler\": \"simple\", \"steps\": 4, \"denoise\": 1, \"model\": [\"30\", 0] }, \"class_type\": \"BasicScheduler\" },\n    \"22\": { \"inputs\": { \"model\": [\"30\", 0], \"conditioning\": [\"26\", 0] }, \"class_type\": \"BasicGuider\" },\n    \"25\": { \"inputs\": { \"noise_seed\": Math.floor(Math.random() * 1000000000) }, \"class_type\": \"RandomNoise\" },\n    \"26\": { \"inputs\": { \"guidance\": 1, \"conditioning\": [\"6\", 0] }, \"class_type\": \"FluxGuidance\" },\n    \"27\": { \"inputs\": { \"width\": 2560, \"height\": 1440, \"batch_size\": 1 }, \"class_type\": \"EmptySD3LatentImage\" },\n    \"30\": { \"inputs\": { \"max_shift\": 1.15, \"base_shift\": 0.5, \"width\": 2560, \"height\": 1440, \"model\": [\"12\", 0] }, \"class_type\": \"ModelSamplingFlux\" },\n    \"8\": { \"inputs\": { \"samples\": [\"13\", 0], \"vae\": [\"10\", 0] }, \"class_type\": \"VAEDecode\" },\n\n    // --- BRANCH 1: THUMBNAIL (960x540) ---\n    \"50\": { \n        \"inputs\": { \n            \"upscale_method\": \"nearest-exact\", \n            \"width\": 960, \n            \"height\": 540, \n            \"crop\": \"disabled\",\n            \"image\": [\"8\", 0] \n        }, \n        \"class_type\": \"ImageScale\" \n    },\n    \"51\": { \n        \"inputs\": { \n            \"filename_prefix\": `960x540/Thumb_${loopIndex}`, \n            \"images\": [\"50\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- BRANCH 2: 10K UPSCALE (4x) ---\n    \"40\": { \"inputs\": { \"upscale_model\": [\"41\", 0], \"image\": [\"8\", 0] }, \"class_type\": \"ImageUpscaleWithModel\" },\n    \"41\": { \"inputs\": { \"model_name\": \"4x-UltraSharp.pth\" }, \"class_type\": \"UpscaleModelLoader\" },\n    \"9\": { \n        \"inputs\": { \n            \"filename_prefix\": `10240x5760/Flux_10K_${loopIndex}`, \n            \"images\": [\"40\", 0] \n        }, \n        \"class_type\": \"SaveImage\" \n    },\n\n    // --- WEBHOOK (Triggered by 10K completion) ---\n    \"31\": {\n      \"inputs\": {\n        \"webhook_url\": n8nWebhookUrl,\n        \"images\": [\"40\", 0], \n        \"additional_info\": \"{\\\"status\\\": \\\"complete\\\"}\"\n      },\n      \"class_type\": \"WebhookNotifierNode\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -2208
+      ],
+      "id": "d62e6c64-81aa-4b0b-95d5-714f639ec23b",
+      "name": "Duplicate From Below1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const atmospheres = [\n    'modern vector abstract', 'minimalist vector-style', 'Picasso cubist abstract',\n    'De Stijl geometric', 'Abstract Expressionist', 'Bauhaus constructivist',\n    'Mark Rothko color field', 'Jackson Pollock gestural', 'hard-edge abstraction',\n    'lyrical abstraction', 'suprematist', 'neo-geo'\n];\nconst textures = [\n    'Oil Paint On Canvas', 'Paint On Canvas',\n];\nconst palettes = [\n    // Material/Painterly\n    'Raw Concrete and Safety Orange', 'Oxidized Copper and Verdigris',\n    'Midnight Indigo and Brushed Steel', 'Desert Ochre and Terracotta',\n    'Raw Linen and Charcoal', 'Dusty Rose and Sage',\n    'Deep Plum and Champagne', 'Slate Blue and Apricot',\n    'Iridescent Pearl and Holographic Silver', 'Bauhaus (Ochre, Brick Red, Denim)',\n    'Monochromatic Red (Infrared)', 'Monochromatic Blue (Ultraviolet)',\n    'Burnt Sienna and Prussian Blue', 'Cadmium Yellow and Cobalt',\n    'Titanium White and Lamp Black', 'Viridian and Alizarin Crimson',\n    'Phthalo Blue and Raw Umber', 'Quinacridone Magenta and Cerulean',\n    'Warm Grey and Vermillion', 'Anthracite and Electric Violet',\n    'Aged Brass and Oxblood', 'Gunmetal and Neon Coral',\n    'Deep Teal and Burnished Gold', 'Smoke and Saffron',\n    'Chalk White and Carbon Black', 'Rust and Klein Blue',\n    // Memphis / 90s Neon\n    'Hot Pink and Electric Yellow on White', 'Acid Green and Shocking Pink',\n    'Neon Orange and Cobalt Blue', 'Fluorescent Yellow and Violet',\n    'Cyan and Magenta on Bright White', 'Electric Teal and Hot Coral',\n    'Memphis Primaries (Red, Yellow, Blue, Black)', 'Neon Green and Ultra Violet',\n    'Bubblegum Pink and Electric Blue', 'Laser Lemon and Radical Red',\n    'Retro Teal and Neon Peach', 'Bold Chartreuse and Fuchsia',\n    '90s Hypercolor (Magenta to Cyan gradient)', 'Saved by the Bell (Teal, Purple, Hot Pink, Yellow)'\n];\nconst lightQualities = [\n    'luminous', 'impasto catching light', 'glazed translucency',\n    'matte ground', 'reflective varnish', 'chroma saturated',\n    'tonal depth', 'pigment density'\n];\nreturn [{\n  json: {\n    atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],\n    texture: textures[Math.floor(Math.random() * textures.length)],\n    palette: palettes[Math.floor(Math.random() * palettes.length)],\n    lightQuality: lightQualities[Math.floor(Math.random() * lightQualities.length)],\n    seed: Math.floor(Math.random() * 1000000),\n    quality_boosters: \"Vector Style Modern Art, highly detailed\",\n    negatives: 'human, face, skin, animal, creature, biological, blurry, low resolution, noisy, grain, compression artifacts, dull colors, greyed out, watermark, text, signature, low-contrast, messy composition, distorted anatomy.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -2816
+      ],
+      "id": "e5044ae1-7577-43c5-9739-a78ccf6b8c2d",
+      "name": "Script Randomizer - Colour Pallette Swap1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Stop AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Working Flux Gen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux Gen": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Working Flux 2x Upscale",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux 2x Upscale": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Prompt Gen2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Working Flux 4x Upscaler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux 4x Upscaler": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "IMG2Vid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IMG2Vid": {
+      "main": [
+        []
+      ]
+    },
+    "Batch 2": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ollama Prompt Gen13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen12": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript16",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript16": {
+      "main": [
+        [
+          {
+            "node": "Working Flux 2x Upscale9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux 2x Upscale9": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Prompt Gen13": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript17",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript17": {
+      "main": [
+        [
+          {
+            "node": "Working Flux 2x Upscale10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux 2x Upscale10": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Prompt Gen14": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript18": {
+      "main": [
+        [
+          {
+            "node": "Working Flux Gen1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux Gen1": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ollama Prompt Gen14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen15": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript19": {
+      "main": [
+        [
+          {
+            "node": "Working Flux Gen2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux Gen2": {
+      "main": [
+        [
+          {
+            "node": "Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ollama Prompt Gen15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Counter Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Counter Set": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Counter Set1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Counter Set1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items4": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ollama Prompt Gen16",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript20": {
+      "main": [
+        [
+          {
+            "node": "Working Flux Gen3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux Gen3": {
+      "main": [
+        [
+          {
+            "node": "Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt Gen16": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript20",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Counter Set2": {
+      "main": [
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Script Randomizer - Colour Pallette Swap1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Working Flux Gen4": {
+      "main": [
+        [
+          {
+            "node": "Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Start Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Randomizer - No Motion": {
+      "main": [
+        []
+      ]
+    },
+    "Script Randomizer Motion": {
+      "main": [
+        [
+          {
+            "node": "Ollama Prompt Gen12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Prompt From Randomizer": {
+      "main": [
+        [
+          {
+            "node": "Stop Ollama",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Duplicate From Below1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama - Comfy Ui ": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama - Comfy Ui 1": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama - Comfy Ui 2": {
+      "main": [
+        []
+      ]
+    },
+    "Stop AI": {
+      "main": [
+        [
+          {
+            "node": "Start AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start AI": {
+      "main": [
+        [
+          {
+            "node": "Counter Set2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Ollama": {
+      "main": [
+        []
+      ]
+    },
+    "Start Ollama": {
+      "main": [
+        [
+          {
+            "node": "Counter Set2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript21": {
+      "main": [
+        []
+      ]
+    },
+    "Script Randomizer - Updated Variables": {
+      "main": [
+        []
+      ]
+    },
+    "Duplicate From Below": {
+      "main": [
+        []
+      ]
+    },
+    "Script Randomizer - Focus Paint": {
+      "main": [
+        []
+      ]
+    },
+    "Start AI1": {
+      "main": [
+        [
+          {
+            "node": "Script Randomizer - Focus Paint1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Randomizer - Focus Paint1": {
+      "main": [
+        [
+          {
+            "node": "Ollama Prompt From Randomizer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Randomizer - Focus Vector Modern Art": {
+      "main": [
+        []
+      ]
+    },
+    "Script Randomizer - Colour Pallette Swap": {
+      "main": [
+        []
+      ]
+    },
+    "Script Randomizer - Colour Pallette Swap1": {
+      "main": [
+        [
+          {
+            "node": "Ollama Prompt From Randomizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate From Below1": {
+      "main": [
+        [
+          {
+            "node": "Working Flux Gen4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "62f665e6-d1f7-4a48-8e25-11f3fadaafac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9bfc3b37f1b7d1ba9b5bf91bcbbc03b4e4d31ce36ed2a13e8679f3828359d384"
+  },
+  "id": "hr4gsCAUn1V2xDff",
+  "tags": []
+}
